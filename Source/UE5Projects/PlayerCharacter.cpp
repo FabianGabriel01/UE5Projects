@@ -3,8 +3,10 @@
 
 #include "PlayerCharacter.h"
 #include "Camera/CameraComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "PhysicsEngine/PhysicsHandleComponent.h"
+#include "Grabber.h"
 
 // Sets default values
 APlayerCharacter::APlayerCharacter()
@@ -19,6 +21,8 @@ APlayerCharacter::APlayerCharacter()
 
 	GetCharacterMovement()->AirControl = 100.f;
 
+	
+
 }
 
 // Called when the game starts or when spawned
@@ -27,6 +31,8 @@ void APlayerCharacter::BeginPlay()
 	Super::BeginPlay();
 
 	UE_LOG(LogTemp, Warning, TEXT("Hello Friend :D"));
+
+	
 	
 }
 
@@ -80,6 +86,16 @@ void APlayerCharacter::SprintRelease()
 void APlayerCharacter::JumpAc()
 {
 	ACharacter::Jump();
+}
+
+void APlayerCharacter::OnGrab()
+{
+	
+}
+
+void APlayerCharacter::OnReleaseGrab()
+{
+	
 }
 
 void APlayerCharacter::LookupRate(float AxisValue)

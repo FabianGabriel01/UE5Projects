@@ -34,6 +34,8 @@ private:
 	void SprintAC();
 	void SprintRelease();
 	void JumpAc();
+	void OnGrab();
+	void OnReleaseGrab();
 
 	//ControllerSection
 	void LookupRate(float AxisValue);
@@ -47,6 +49,8 @@ private:
 
 	UPROPERTY(EditDefaultsOnly)
 	class UPhysicsHandleComponent* _Physics;
+
+
 
 	
 

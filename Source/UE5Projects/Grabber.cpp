@@ -2,6 +2,8 @@
 
 
 #include "Grabber.h"
+#include "Engine/World.h"
+#include "DrawDebugHelpers.h"
 
 // Sets default values for this component's properties
 UGrabber::UGrabber()
@@ -30,5 +32,120 @@ void UGrabber::TickComponent(float DeltaTime, ELevelTick TickType, FActorCompone
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
 	// ...
+
+	UPhysicsHandleComponent* PhysicsHandle = GetPhysicsHandle();
+
+	if(PhysicsHandle && PhysicsHandle->GetGrabbedComponent())
+	{
+		FVector TargetLocation = GetComponentLocation() + GetForwardVector() * HoldDistance;
+		PhysicsHandle->SetTargetLocationAndRotation(TargetLocation, GetComponentRotation());
+
+	}
+
+}
+
+void UGrabber::DoGrab()
+{
+	UPhysicsHandleComponent* PhysicsHandle = GetPhysicsHandle();
+	if(PhysicsHandle == nullptr)
+	{
+		return;
+	}
+
+
+	FHitResult HitResult;
+	bool HasHit = GetGrabbableInReach(HitResult);
+
+	
+
+	if(HasHit)
+	{
+		Draw_SphereHitResult(FColor::Red, HitResult.ImpactPoint);
+
+		Draw_SphereHitResult(FColor::Green, HitResult.Location);
+
+		UPrimitiveComponent* HitComponent = HitResult.GetComponent();
+		HitComponent->SetSimulatePhysics(true);
+		HitComponent->WakeAllRigidBodies();
+
+		AActor* HitActor = HitResult.GetActor();
+
+		HitActor->Tags.Add("Grabbed");
+
+		HitActor->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+
+		//HitResult.GetComponent()->WakeRigidBody();
+		PhysicsHandle->GrabComponentAtLocationWithRotation
+		(
+			HitResult.GetComponent(),
+			NAME_None,
+			HitResult.ImpactPoint,
+			GetComponentRotation()
+		);
+
+
+
+		//AActor* HitActor = HitResult.GetActor();
+		UE_LOG(LogTemp, Display, TEXT("HitActor: %s"), *HitActor->GetActorNameOrLabel());
+
+	}
+	else
+	{
+		UE_LOG(LogTemp, Display, TEXT("NoActorHit"));
+	}
+}
+
+void UGrabber::ReleaseGrab()
+{
+	UPhysicsHandleComponent* PhysicsHandle = GetPhysicsHandle();
+
+	UPrimitiveComponent* TargetMesh = PhysicsHandle->GrabbedComponent;
+
+	if(PhysicsHandle && PhysicsHandle->GetGrabbedComponent() && TargetMesh != nullptr)
+	{
+		AActor* GrabberActor = PhysicsHandle->GetGrabbedComponent()->GetOwner();
+		GrabberActor->Tags.Remove("Grabbed");
+
+		TargetMesh->AddImpulse(GetForwardVector() * Impulse, NAME_None, true);
+
+		PhysicsHandle->ReleaseComponent();
+		
+
+	}
+}
+
+UPhysicsHandleComponent* UGrabber::GetPhysicsHandle() const
+{
+	UPhysicsHandleComponent* Result = GetOwner()->FindComponentByClass<UPhysicsHandleComponent>();
+	if(Result == nullptr)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Grabber requires a UPhysicsHandleComponent"));
+	}
+	return Result;
+}
+
+
+bool UGrabber::GetGrabbableInReach(FHitResult& OutHitResult) const
+{
+
+	FVector _Starts = GetComponentLocation();
+	FVector _End = _Starts + GetForwardVector() * MaxGrabDistance;
+	
+	Draw_Line(_Starts, _End, FColor::Red);
+	Draw_SphereHitResult(FColor::Blue, _End)
+	
+	
+
+	FCollisionShape Shape = FCollisionShape::MakeSphere(GrabRadius);
+	return GetWorld()->SweepSingleByChannel
+	(
+		OutHitResult, 
+		_Starts, 
+		_End, 
+		FQuat::Identity,
+		ECC_GameTraceChannel1,
+		Shape
+	);
+
 }
 
