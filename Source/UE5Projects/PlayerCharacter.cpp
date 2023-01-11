@@ -8,6 +8,10 @@
 #include "PhysicsEngine/PhysicsHandleComponent.h"
 #include "Grabber.h"
 
+#include "Components/InputComponent.h"
+#include "EnhancedInputComponent.h"
+#include "EnhancedInputSubsystems.h"
+
 // Sets default values
 APlayerCharacter::APlayerCharacter()
 {
@@ -32,6 +36,15 @@ void APlayerCharacter::BeginPlay()
 
 	UE_LOG(LogTemp, Warning, TEXT("Hello Friend :D"));
 
+	if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
+	{
+
+		if (UEnhancedInputLocalPlayerSubsystem* _System = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
+		{
+			_System->AddMappingContext(ContextInput, 0);
+		}
+	}
+
 	
 	
 }
@@ -48,19 +61,43 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
-	PlayerInputComponent->BindAxis(TEXT("MoveForward"), this, &APlayerCharacter::MoveForward);
+	if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
+	{
+		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Movement);
+		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Look);
+	}
+
+
+	/*PlayerInputComponent->BindAxis(TEXT("MoveForward"), this, &APlayerCharacter::MoveForward);
 	PlayerInputComponent->BindAxis(TEXT("MoveRight"), this, &APlayerCharacter::MoveRight);
 	PlayerInputComponent->BindAxis(TEXT("LookUp"), this, &APawn::AddControllerPitchInput);
-	PlayerInputComponent->BindAxis(TEXT("LookRight"), this, &APawn::AddControllerYawInput);
+	PlayerInputComponent->BindAxis(TEXT("LookRight"), this, &APawn::AddControllerYawInput);*/
 
 	PlayerInputComponent->BindAction(TEXT("Sprint"), EInputEvent::IE_Pressed, this, &APlayerCharacter::SprintAC);
 	PlayerInputComponent->BindAction(TEXT("Sprint"), EInputEvent::IE_Released, this, &APlayerCharacter::SprintRelease);
 	PlayerInputComponent->BindAction(TEXT("Jump"), EInputEvent::IE_Pressed, this, &APlayerCharacter::JumpAc);
 
 	//Controllers
-	PlayerInputComponent->BindAxis(TEXT("LookupRate"), this, &APlayerCharacter::LookupRate);
-	PlayerInputComponent->BindAxis(TEXT("LookRightRate"), this, &APlayerCharacter::LookRightRate);
+	/*PlayerInputComponent->BindAxis(TEXT("LookupRate"), this, &APlayerCharacter::LookupRate);
+	PlayerInputComponent->BindAxis(TEXT("LookRightRate"), this, &APlayerCharacter::LookRightRate);*/
 
+}
+
+void APlayerCharacter::Movement(const FInputActionValue& Value)
+{
+	const FVector2D MovementVector = Value.Get<FVector2D>();
+
+	const FVector Forward = GetActorForwardVector();
+	AddMovementInput(Forward, MovementVector.Y);
+	const FVector Right = GetActorRightVector();
+	AddMovementInput(Right, MovementVector.X);
+}
+
+void APlayerCharacter::Look(const FInputActionValue& Value)
+{
+	const FVector2D LookAxisvector = Value.Get<FVector2D>();
+	AddControllerPitchInput(LookAxisvector.Y);
+	AddControllerYawInput(LookAxisvector.X);
 }
 
 void APlayerCharacter::MoveForward(float AxisValue)

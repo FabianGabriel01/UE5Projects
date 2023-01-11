@@ -4,7 +4,12 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "InputActionValue.h"
 #include "PlayerCharacter.generated.h"
+
+
+class UInputMappingContext;
+class UInputAction;
 
 UCLASS()
 class UE5PROJECTS_API APlayerCharacter : public ACharacter
@@ -19,6 +24,15 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+	UPROPERTY(EditAnywhere, Category = "Input")
+	UInputMappingContext* ContextInput;
+
+	UPROPERTY(EditAnywhere, Category = "Input")
+	UInputAction* MoveAction;
+
+	UPROPERTY(EditAnywhere, Category = "Input")
+	UInputAction* LookAction;
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -27,6 +41,9 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 private:
+
+	void Movement(const FInputActionValue& Value);
+	void Look(const FInputActionValue& Value);
 
 	void MoveForward(float AxisValue);
 	void MoveRight(float AxisValue);
